@@ -24,17 +24,17 @@ export class CoursesService {
   async create(dto: CreateCourseDto) {
     try {
       const coach = await this.coachRepo.findOne({
-        where: { id: dto.coachId },
+        where: { id: dto.coach },
       });
       if (!coach)
-        throw new NotFoundException(`Coach with ID ${dto.coachId} not found`);
+        throw new NotFoundException(`Coach with ID ${dto.coach} not found`);
 
       const newCourse = this.courseRepo.create({
         title: dto.title,
         description: dto.description,
         duration_hours: dto.duration_hours,
-        start_date: dto.start_date,
-        end_date: dto.end_date,
+        start_date: new Date(dto.start_date),
+        end_date: new Date(dto.end_date),
         price: dto.price,
         coach,
       });
@@ -75,14 +75,17 @@ export class CoursesService {
       const course = await this.courseRepo.findOne({ where: { id } });
       if (!course) throw new NotFoundException(`Course #${id} not found`);
 
-      if (dto.coachId) {
+      if (dto.coach) {
         const coach = await this.coachRepo.findOne({
-          where: { id: dto.coachId },
+          where: { id: dto.coach },
         });
         if (!coach)
-          throw new NotFoundException(`Coach with ID ${dto.coachId} not found`);
+          throw new NotFoundException(`Coach with ID ${dto.coach} not found`);
         course.coach = coach;
       }
+
+        if (dto.start_date) course.start_date = new Date(dto.start_date);
+        if (dto.end_date) course.end_date = new Date(dto.end_date);
 
       Object.assign(course, dto);
       return await this.courseRepo.save(course);

@@ -19,7 +19,7 @@ export class PerformanceReport {
   })
   player: Player;
 
-  @ManyToOne(() => Coach, (coach) => coach.performance_reports, {
+  @ManyToOne(() => Coach, (coach) => coach.performanceReports, {
     onDelete: "CASCADE",
   })
   coach: Coach;

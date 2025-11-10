@@ -33,6 +33,7 @@ import { MedicalRecord } from "./medical_records/entities/medical_record.entity"
 import { Enrollment } from "./enrollments/entities/enrollment.entity";
 import { Course } from "./courses/entities/course.entity";
 
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -45,7 +46,7 @@ import { Course } from "./courses/entities/course.entity";
       host: process.env.DB_HOST,
       port: Number(process.env.DB_PORT),
       username: process.env.DB_USER,
-      password: String(process.env.DB_PASS), // qat’iy string
+      password: String(process.env.DB_PASS), 
       database: process.env.DB_NAME,
       entities: [
         User,

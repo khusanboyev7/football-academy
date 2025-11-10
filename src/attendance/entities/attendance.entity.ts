@@ -28,7 +28,7 @@ export class Attendance {
   attended: boolean;
 
   @Column({ nullable: true })
-  reason: string;
+  reason?: string;
 
   @CreateDateColumn()
   created_at: Date;

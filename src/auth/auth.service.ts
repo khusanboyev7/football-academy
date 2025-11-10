@@ -13,17 +13,18 @@ import { Repository } from "typeorm";
 import { User } from "../users/entities/user.entity";
 import { ConfigService } from "@nestjs/config";
 import { Role } from "../common/enum/role.enum";
+import { Tokens, JwtPayload } from "../common/types";
+import { RegisterDto, CreateUserDto, LoginDto } from "../users/dto";
 
 @Injectable()
 export class AuthService implements OnModuleInit {
   constructor(
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
-    private readonly jwt: JwtService,
+    private readonly jwtService: JwtService,
     private readonly config: ConfigService
   ) {}
 
-  // ✅ 1. Super Admin auto-create (environment orqali)
   async onModuleInit() {
     const email = this.config.get<string>("SUPERADMIN_EMAIL");
     const password = this.config.get<string>("SUPERADMIN_PASSWORD");
@@ -49,114 +50,101 @@ export class AuthService implements OnModuleInit {
     }
   }
 
-  // ✅ 2. Register (faqat player yaratiladi)
-  async register(dto: any) {
+  private async generateTokens(user: User): Promise<Tokens> {
+    const payload: JwtPayload = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      is_active: user.is_active,
+    };
+
+    const accessToken = await this.jwtService.signAsync(payload, {
+      secret: this.config.get<string>("JWT_ACCESS_SECRET"),
+      expiresIn: "1h",
+    });
+
+    const refreshToken = await this.jwtService.signAsync(payload, {
+      secret: this.config.get<string>("JWT_REFRESH_SECRET"),
+      expiresIn: "7d",
+    });
+
+    return { accessToken, refreshToken };
+  }
+
+  async signup(dto: RegisterDto) {
     const exists = await this.userRepo.findOne({ where: { email: dto.email } });
     if (exists) throw new ConflictException("Bu email allaqachon mavjud!");
 
-    const hash = await bcrypt.hash(dto.password, 10);
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
 
     const newUser = this.userRepo.create({
       email: dto.email,
-      password: hash,
-      role: Role.PLAYER, 
+      password: hashedPassword,
+      role: Role.PLAYER,
     });
 
     await this.userRepo.save(newUser);
 
     return {
-      message: `🎉 Xush kelibsiz, ${newUser.email}! Siz muvaffaqiyatli ro‘yxatdan o‘tdingiz.`,
+      message: "🎉 Foydalanuvchi muvaffaqiyatli ro‘yxatdan o‘tdi!",
+      userId: newUser.id,
     };
   }
 
-  // ✅ 3. Login (faqat access_token)
-  async login(dto: any) {
+  async signin(dto: LoginDto): Promise<any> {
     const user = await this.userRepo.findOne({ where: { email: dto.email } });
     if (!user) throw new UnauthorizedException("Email yoki parol noto‘g‘ri!");
 
-    const valid = await bcrypt.compare(dto.password, user.password);
-    if (!valid) throw new UnauthorizedException("Email yoki parol noto‘g‘ri!");
+    const isPasswordValid = await bcrypt.compare(dto.password, user.password);
+    if (!isPasswordValid)
+      throw new UnauthorizedException("Email yoki parol noto‘g‘ri!");
 
-    const payload = { sub: user.id, role: user.role };
-    const access_token = await this.jwt.signAsync(payload, {
-      secret: this.config.get("JWT_ACCESS_SECRET"),
-      expiresIn: this.config.get("JWT_ACCESS_EXPIRE") || "15m",
-    });
+    const { accessToken, refreshToken } = await this.generateTokens(user);
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+
+    await this.userRepo.update(user.id, { hashedRefreshToken });
 
     return {
-      message: `✅ Login muvaffaqiyatli! Xush kelibsiz, ${user.email}.`,
+      message: "✅ Muvaffaqiyatli tizimga kirdingiz!",
       user: {
         id: user.id,
         email: user.email,
         role: user.role,
       },
-      access_token,
+      accessToken,
+      refreshToken,
     };
   }
 
-  // ✅ 4. Create Admin (faqat super_admin yaratadi)
-  async createAdmin(creatorId: number, dto: any) {
-    const creator = await this.userRepo.findOne({ where: { id: creatorId } });
-    if (!creator || creator.role !== Role.SUPER_ADMIN) {
-      throw new ForbiddenException(
-        "Faqat Super Admin yangi admin yaratishi mumkin!"
-      );
-    }
+  async refresh(userId: number, refreshToken: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user || !user.hashedRefreshToken)
+      throw new UnauthorizedException("Noto‘g‘ri refresh token!");
 
-    const exists = await this.userRepo.findOne({ where: { email: dto.email } });
-    if (exists) throw new ConflictException("Bu email allaqachon mavjud!");
+    const isValid = await bcrypt.compare(refreshToken, user.hashedRefreshToken);
+    if (!isValid) throw new UnauthorizedException("Token yaroqsiz!");
 
-    if (dto.role && dto.role === Role.SUPER_ADMIN) {
-      throw new ForbiddenException("Super Admin yaratish taqiqlangan!");
-    }
+    const { accessToken, refreshToken: newRefreshToken } =
+      await this.generateTokens(user);
 
-    const hash = await bcrypt.hash(dto.password, 10);
-    const admin = this.userRepo.create({
-      email: dto.email,
-      password: hash,
-      role: Role.ADMIN,
-    });
-
-    await this.userRepo.save(admin);
+    const hashedRefreshToken = await bcrypt.hash(newRefreshToken, 10);
+    await this.userRepo.update(user.id, { hashedRefreshToken });
 
     return {
-      message: `👑 Admin muvaffaqiyatli yaratildi! Email: ${admin.email}`,
-      admin: {
-        id: admin.id,
-        email: admin.email,
-        role: admin.role,
-      },
+      message: "♻️ Token yangilandi!",
+      accessToken,
+      refreshToken: newRefreshToken,
     };
   }
 
-  // ✅ 5. Logout
-  async logout(email: string) {
-    const user = await this.userRepo.findOne({ where: { email } });
+  async logout(userId: number) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException("Foydalanuvchi topilmadi!");
 
-    return {
-      message: `👋 ${user.email}, tizimdan chiqdingiz. Keyingi safar ko‘rishguncha!`,
-    };
+    await this.userRepo.update(user.id, { hashedRefreshToken: null });
+    return { message: "👋 Tizimdan muvaffaqiyatli chiqdingiz!" };
   }
 
-  // ✅ 6. Refresh Token (faqat mavjud user uchun)
-  async refreshToken(userId: number) {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (!user) throw new NotFoundException("Bunday foydalanuvchi mavjud emas!");
-
-    const payload = { sub: user.id, role: user.role };
-    const access_token = await this.jwt.signAsync(payload, {
-      secret: this.config.get("JWT_ACCESS_SECRET"),
-      expiresIn: this.config.get("JWT_ACCESS_EXPIRE") || "15m",
-    });
-
-    return {
-      message: "♻️ Yangi access token muvaffaqiyatli yaratildi!",
-      access_token,
-    };
-  }
-
-  // ✅ 7. getMe (foydalanuvchi profilini olish)
   async getMe(userId: number) {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException("Foydalanuvchi topilmadi!");
@@ -167,6 +155,53 @@ export class AuthService implements OnModuleInit {
         id: user.id,
         email: user.email,
         role: user.role,
+      },
+    };
+  }
+
+  async createUserByRole(creatorId: number, dto: CreateUserDto) {
+    const creator = await this.userRepo.findOne({ where: { id: creatorId } });
+    if (!creator) throw new NotFoundException("Foydalanuvchi topilmadi");
+
+    if (dto.role === Role.SUPER_ADMIN) {
+      throw new ForbiddenException(
+        "SUPER_ADMINni qo‘lda yaratish mumkin emas!"
+      );
+    }
+
+    if (!dto.role) {
+      throw new ForbiddenException("Foydalanuvchi roli ko‘rsatilmagan!");
+    }
+
+    if (creator.role === Role.SUPER_ADMIN) {
+    } else if (creator.role === Role.ADMIN) {
+      if (![Role.STAFF, Role.COACH, Role.PLAYER].includes(dto.role as Role)) {
+        throw new ForbiddenException("ADMIN bu rolni yaratolmaydi!");
+      }
+    } else {
+      throw new ForbiddenException("Sizda foydalanuvchi yaratish huquqi yo‘q!");
+    }
+
+    const exist = await this.userRepo.findOne({ where: { email: dto.email } });
+    if (exist) throw new ConflictException("Bu email allaqachon mavjud!");
+
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    const newUser = this.userRepo.create({
+      email: dto.email,
+      password: hashedPassword,
+      role: dto.role,
+    });
+
+    await this.userRepo.save(newUser);
+
+    return {
+      message: `✅ ${dto.role} foydalanuvchi muvaffaqiyatli yaratildi!`,
+      createdBy: creator.email,
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        role: newUser.role,
       },
     };
   }

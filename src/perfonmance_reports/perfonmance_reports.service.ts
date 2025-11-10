@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
 import { PerformanceReport } from "./entities/perfonmance_report.entity";
@@ -31,9 +31,13 @@ export class PerformanceReportsService {
       if (!coach) return { error: `Coach with id ${dto.coachId} not found` };
 
       const report = this.performanceReportRepo.create({
-        ...dto,
         player,
         coach,
+        report_date: new Date(dto.report_date),
+        strengths: dto.strengths,
+        weaknesses: dto.weaknesses,
+        recommendations: dto.recommendations,
+        overall_score: dto.overall_score,
       });
       await this.performanceReportRepo.save(report);
       return report;
@@ -76,40 +80,39 @@ export class PerformanceReportsService {
   }
 
   async update(id: number, dto: UpdatePerfonmanceReportDto) {
-    try {
-      const report = await this.performanceReportRepo.findOne({
-        where: { id },
-        relations: ["player", "coach"],
+    const report = await this.performanceReportRepo.findOne({
+      where: { id },
+      relations: ["player", "coach"],
+    });
+    if (!report)
+      throw new NotFoundException(`Performance report with id ${id} not found`);
+
+    if (dto.playerId) {
+      const player = await this.playerRepo.findOne({
+        where: { id: dto.playerId },
       });
-      if (!report)
-        return { error: `Performance report with id ${id} not found` };
-
-      if (dto.playerId) {
-        const player = await this.playerRepo.findOne({
-          where: { id: dto.playerId },
-        });
-        if (!player)
-          return { error: `Player with id ${dto.playerId} not found` };
-        report.player = player;
-      }
-
-      if (dto.coachId) {
-        const coach = await this.coachRepo.findOne({
-          where: { id: dto.coachId },
-        });
-        if (!coach) return { error: `Coach with id ${dto.coachId} not found` };
-        report.coach = coach;
-      }
-
-      Object.assign(report, dto);
-      await this.performanceReportRepo.save(report);
-      return report;
-    } catch (error) {
-      return {
-        error: "Failed to update performance report",
-        details: error.message,
-      };
+      if (!player)
+        throw new NotFoundException(`Player with id ${dto.playerId} not found`);
+      report.player = player;
     }
+
+    if (dto.coachId) {
+      const coach = await this.coachRepo.findOne({
+        where: { id: dto.coachId },
+      });
+      if (!coach)
+        throw new NotFoundException(`Coach with id ${dto.coachId} not found`);
+      report.coach = coach;
+    }
+
+    if (dto.report_date) report.report_date = new Date(dto.report_date);
+    if (dto.strengths) report.strengths = dto.strengths;
+    if (dto.weaknesses) report.weaknesses = dto.weaknesses;
+    if (dto.recommendations) report.recommendations = dto.recommendations;
+    if (dto.overall_score !== undefined)
+      report.overall_score = dto.overall_score;
+
+    return this.performanceReportRepo.save(report);
   }
 
   async remove(id: number) {

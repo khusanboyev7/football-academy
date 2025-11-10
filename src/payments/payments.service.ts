@@ -9,19 +9,55 @@ import { Repository } from "typeorm";
 import { Payment } from "./entities/payment.entity";
 import { CreatePaymentDto } from "./dto/create-payment.dto";
 import { UpdatePaymentDto } from "./dto/update-payment.dto";
+import { Player } from "../players/entities/player.entity";
+import { Enrollment } from "../enrollments/entities/enrollment.entity";
 
 @Injectable()
 export class PaymentsService {
   constructor(
     @InjectRepository(Payment)
-    private readonly paymentRepository: Repository<Payment>
+    private readonly paymentRepository: Repository<Payment>,
+
+    @InjectRepository(Player)
+    private readonly playerRepo: Repository<Player>,
+
+    @InjectRepository(Enrollment)
+    private readonly enrollmentRepo: Repository<Enrollment>
   ) {}
 
   async create(dto: CreatePaymentDto) {
     try {
-      const payment = this.paymentRepository.create(dto);
-      return await this.paymentRepository.save(payment);
+      const player = await this.playerRepo.findOne({
+        where: { id: dto.playerId },
+      });
+      if (!player)
+        throw new NotFoundException(`Player with id ${dto.playerId} not found`);
+
+      const enrollment = await this.enrollmentRepo.findOne({
+        where: { id: dto.enrollmentId },
+      });
+      if (!enrollment)
+        throw new NotFoundException(
+          `Enrollment with id ${dto.enrollmentId} not found`
+        );
+
+      const payment = this.paymentRepository.create({
+        player,
+        enrollment,
+        amount: dto.amount,
+        payment_date: dto.payment_date,
+        payment_method: dto.payment_method,
+        status: dto.status,
+      });
+
+      const saved = await this.paymentRepository.save(payment);
+      return {
+        success: true,
+        message: "Payment created successfully",
+        data: saved,
+      };
     } catch (error) {
+      if (error instanceof NotFoundException) throw error;
       throw new BadRequestException(
         "Failed to create payment: " + error.message
       );
@@ -55,10 +91,47 @@ export class PaymentsService {
 
   async update(id: number, dto: UpdatePaymentDto) {
     try {
-      const payment = await this.paymentRepository.preload({ id, ...dto });
+      let playerObj: Player | null = null;
+      let enrollmentObj: Enrollment | null = null;
+
+      if (dto.playerId !== undefined) {
+        playerObj = await this.playerRepo.findOne({
+          where: { id: dto.playerId },
+        });
+        if (!playerObj)
+          throw new NotFoundException(
+            `Player with id ${dto.playerId} not found`
+          );
+      }
+
+      if (dto.enrollmentId !== undefined) {
+        enrollmentObj = await this.enrollmentRepo.findOne({
+          where: { id: dto.enrollmentId },
+        });
+        if (!enrollmentObj)
+          throw new NotFoundException(
+            `Enrollment with id ${dto.enrollmentId} not found`
+          );
+      }
+
+      const paymentData: any = { id, ...dto };
+      if (playerObj) paymentData.player = playerObj;
+      if (enrollmentObj) paymentData.enrollment = enrollmentObj;
+
+      delete paymentData.playerId;
+      delete paymentData.enrollmentId;
+
+      const payment = await this.paymentRepository.preload(paymentData);
       if (!payment) throw new NotFoundException("Payment not found");
-      return await this.paymentRepository.save(payment);
+
+      const updated = await this.paymentRepository.save(payment);
+      return {
+        success: true,
+        message: "Payment updated successfully",
+        data: updated,
+      };
     } catch (error) {
+      if (error instanceof NotFoundException) throw error;
       throw new BadRequestException(error.message);
     }
   }

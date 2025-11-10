@@ -8,17 +8,34 @@ import { UpdateMediaGalleryDto } from "./dto/update-media_gallery.dto";
 import { Repository } from "typeorm";
 import { MediaGallery } from "./entities/media_gallery.entity";
 import { InjectRepository } from "@nestjs/typeorm";
+import { User } from "../users/entities/user.entity";
 
 @Injectable()
 export class MediaGalleryService {
   constructor(
     @InjectRepository(MediaGallery)
-    private mediaGalleryRepository: Repository<MediaGallery>
+    private mediaGalleryRepository: Repository<MediaGallery>,
+
+
+
+    @InjectRepository(User)
+    private userRepository: Repository<User>
   ) {}
 
-  async create(createMediaGalleryDto: CreateMediaGalleryDto) {
+  async create(dto: CreateMediaGalleryDto) {
     try {
-      const media = this.mediaGalleryRepository.create(createMediaGalleryDto);
+      const user = await this.userRepository.findOne({
+        where: { id: dto.uploadedById },
+      });
+      if (!user) throw new BadRequestException("User topilmadi");
+
+      const media = this.mediaGalleryRepository.create({
+        title: dto.title,
+        file_url: dto.file_url,
+        type: dto.type,
+        uploaded_by: user,
+      });
+
       await this.mediaGalleryRepository.save(media);
       return {
         success: true,
@@ -26,7 +43,9 @@ export class MediaGalleryService {
         data: media,
       };
     } catch (error) {
-      throw new BadRequestException("Media yaratishda xatolik yuz berdi ❌");
+      throw new BadRequestException(
+        error.message || "Media yaratishda xatolik yuz berdi ❌"
+      );
     }
   }
 

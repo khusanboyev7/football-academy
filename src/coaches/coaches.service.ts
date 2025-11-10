@@ -27,11 +27,11 @@ export class CoachesService {
       if (!user) throw new NotFoundException("User with given ID not found");
 
       const newCoach = this.coachRepo.create({
-        first_name: dto.first_name,
-        last_name: dto.last_name,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
         email: dto.email,
         phone: dto.phone,
-        license_level: dto.license_level,
+        licenseLevel: dto.licenseLevel,
         specialty: dto.specialty,
         user,
       });
@@ -52,7 +52,7 @@ export class CoachesService {
           "teams",
           "courses",
           "trainings",
-          "performance_reports",
+          "performanceReports",
         ],
       });
     } catch (error) {
@@ -69,7 +69,7 @@ export class CoachesService {
           "teams",
           "courses",
           "trainings",
-          "performance_reports",
+          "performanceReports",
         ],
       });
       if (!coach) throw new NotFoundException(`Coach #${id} not found`);

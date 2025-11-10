@@ -1,25 +1,33 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { IsString, IsEmail, IsEnum, IsNumber } from "class-validator";
 import { LicenceLevel } from "../entities/coach.entity";
 
 export class CreateCoachDto {
   @ApiProperty({ example: "John" })
-  first_name: string;
+  @IsString()
+  firstName: string;
 
   @ApiProperty({ example: "Doe" })
-  last_name: string;
+  @IsString()
+  lastName: string;
 
   @ApiProperty({ example: "john.doe@gmail.com" })
+  @IsEmail()
   email: string;
 
   @ApiProperty({ example: "+998901234567" })
+  @IsString()
   phone: string;
 
   @ApiProperty({ enum: LicenceLevel, example: LicenceLevel.LOCAL })
-  license_level: LicenceLevel;
+  @IsEnum(LicenceLevel)
+  licenseLevel: LicenceLevel;
 
   @ApiProperty({ example: "Defender Specialist" })
+  @IsString()
   specialty: string;
 
-  @ApiProperty({ example: 1 })
+  @ApiProperty({ example: 2 })
+  @IsNumber()
   userId: number;
 }

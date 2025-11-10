@@ -26,10 +26,10 @@ export class Coach {
   id: number;
 
   @Column()
-  first_name: string;
+  firstName: string;
 
   @Column()
-  last_name: string;
+  lastName: string;
 
   @Column()
   email: string;
@@ -38,7 +38,7 @@ export class Coach {
   phone: string;
 
   @Column({ type: "enum", enum: LicenceLevel })
-  license_level: LicenceLevel;
+  licenseLevel: LicenceLevel;
 
   @Column()
   specialty: string;
@@ -56,11 +56,11 @@ export class Coach {
   trainings: Training[];
 
   @OneToMany(() => PerformanceReport, (report) => report.coach)
-  performance_reports: PerformanceReport[];
+  performanceReports: PerformanceReport[];
 
   @CreateDateColumn()
-  created_at: Date;
+  createdAt: Date;
 
   @UpdateDateColumn()
-  updated_at: Date;
+  updatedAt: Date;
 }

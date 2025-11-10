@@ -10,14 +10,12 @@ export class UsersService {
     private readonly userRepo: Repository<User>
   ) {}
 
-  // Foydalanuvchilarni olish
   findAll() {
     return this.userRepo.find({
       relations: ["coaches", "players", "media_gallery"],
     });
   }
 
-  // ID bo'yicha bitta foydalanuvchini olish
   async findOne(id: number) {
     const user = await this.userRepo.findOne({
       where: { id },
@@ -27,9 +25,8 @@ export class UsersService {
     return user;
   }
 
-  // Foydalanuvchini o'chirish
   async remove(id: number) {
-    const user = await this.findOne(id); // NotFoundException tekshirish
+    const user = await this.findOne(id); 
     return this.userRepo.remove(user);
   }
 }

@@ -1,7 +1,6 @@
 import {
   Injectable,
   NotFoundException,
-  BadRequestException,
   InternalServerErrorException,
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -17,34 +16,33 @@ export class EnrollmentsService {
   constructor(
     @InjectRepository(Enrollment)
     private readonly enrollmentRepo: Repository<Enrollment>,
+
     @InjectRepository(Player)
     private readonly playerRepo: Repository<Player>,
+
     @InjectRepository(Course)
     private readonly courseRepo: Repository<Course>
   ) {}
 
+  // CREATE
   async create(dto: CreateEnrollmentDto) {
     try {
       const player = await this.playerRepo.findOne({
         where: { id: dto.playerId },
       });
       if (!player)
-        throw new NotFoundException({
-          message: `Player with id ${dto.playerId} not found`,
-        });
+        throw new NotFoundException(`Player with id ${dto.playerId} not found`);
 
       const course = await this.courseRepo.findOne({
         where: { id: dto.courseId },
       });
       if (!course)
-        throw new NotFoundException({
-          message: `Course with id ${dto.courseId} not found`,
-        });
+        throw new NotFoundException(`Course with id ${dto.courseId} not found`);
 
       const enrollment = this.enrollmentRepo.create({
         player,
         course,
-        enrollment_date: dto.enrollment_date,
+        enrollment_date: new Date(dto.enrollment_date),
         status: dto.status || EnrollmentStatus.ACTIVE,
         grade: dto.grade,
       });
@@ -57,39 +55,37 @@ export class EnrollmentsService {
         data: saved,
       };
     } catch (error) {
-      if (
-        error instanceof BadRequestException ||
-        error instanceof NotFoundException
-      )
-        throw error;
       throw new InternalServerErrorException({
         success: false,
         message: "Failed to create enrollment",
-        error: error.message,
+        error: error.message || error,
       });
     }
   }
 
+  // FIND ALL
   async findAll() {
     try {
-      const data = await this.enrollmentRepo.find({
+      const enrollments = await this.enrollmentRepo.find({
         relations: ["player", "course", "payment"],
+        order: { created_at: "DESC" },
       });
 
       return {
         success: true,
-        count: data.length,
-        data,
+        count: enrollments.length,
+        data: enrollments,
       };
     } catch (error) {
       throw new InternalServerErrorException({
         success: false,
-        message: "Error fetching enrollments",
-        error: error.message,
+        message: "Failed to fetch enrollments",
+        error: error.message || error,
       });
     }
   }
 
+  // FIND ONE
   async findOne(id: number) {
     try {
       const enrollment = await this.enrollmentRepo.findOne({
@@ -97,35 +93,55 @@ export class EnrollmentsService {
         relations: ["player", "course", "payment"],
       });
       if (!enrollment)
-        throw new NotFoundException({
-          success: false,
-          message: `Enrollment with id ${id} not found`,
-        });
+        throw new NotFoundException(`Enrollment with id ${id} not found`);
 
-      return {
-        success: true,
-        data: enrollment,
-      };
+      return { success: true, data: enrollment };
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException({
         success: false,
-        message: "Error retrieving enrollment",
-        error: error.message,
+        message: "Failed to fetch enrollment",
+        error: error.message || error,
       });
     }
   }
 
+  // UPDATE
   async update(id: number, dto: UpdateEnrollmentDto) {
     try {
-      const enrollment = await this.enrollmentRepo.findOne({ where: { id } });
+      const enrollment = await this.enrollmentRepo.findOne({
+        where: { id },
+        relations: ["player", "course"],
+      });
       if (!enrollment)
-        throw new NotFoundException({
-          success: false,
-          message: `Enrollment with id ${id} not found`,
-        });
+        throw new NotFoundException(`Enrollment with id ${id} not found`);
 
-      Object.assign(enrollment, dto);
+      if (dto.playerId) {
+        const player = await this.playerRepo.findOne({
+          where: { id: dto.playerId },
+        });
+        if (!player)
+          throw new NotFoundException(
+            `Player with id ${dto.playerId} not found`
+          );
+        enrollment.player = player;
+      }
+
+      if (dto.courseId) {
+        const course = await this.courseRepo.findOne({
+          where: { id: dto.courseId },
+        });
+        if (!course)
+          throw new NotFoundException(
+            `Course with id ${dto.courseId} not found`
+          );
+        enrollment.course = course;
+      }
+
+      if (dto.enrollment_date)
+        enrollment.enrollment_date = new Date(dto.enrollment_date);
+      if (dto.status) enrollment.status = dto.status;
+      if (dto.grade !== undefined) enrollment.grade = dto.grade;
+
       const updated = await this.enrollmentRepo.save(enrollment);
 
       return {
@@ -134,23 +150,20 @@ export class EnrollmentsService {
         data: updated,
       };
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException({
         success: false,
-        message: "Error updating enrollment",
-        error: error.message,
+        message: "Failed to update enrollment",
+        error: error.message || error,
       });
     }
   }
 
+  // DELETE
   async remove(id: number) {
     try {
       const enrollment = await this.enrollmentRepo.findOne({ where: { id } });
       if (!enrollment)
-        throw new NotFoundException({
-          success: false,
-          message: `Enrollment with id ${id} not found`,
-        });
+        throw new NotFoundException(`Enrollment with id ${id} not found`);
 
       await this.enrollmentRepo.remove(enrollment);
 
@@ -159,11 +172,10 @@ export class EnrollmentsService {
         message: `Enrollment with id ${id} deleted successfully`,
       };
     } catch (error) {
-      if (error instanceof NotFoundException) throw error;
       throw new InternalServerErrorException({
         success: false,
-        message: "Error deleting enrollment",
-        error: error.message,
+        message: "Failed to delete enrollment",
+        error: error.message || error,
       });
     }
   }

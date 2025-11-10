@@ -35,7 +35,15 @@ export class TrainingsService {
         `Coach with ID ${dto.coachId} does not exist`
       );
 
-    const training = this.trainingRepo.create({ ...dto, team, coach });
+    const training = this.trainingRepo.create({
+      date: dto.date,
+      start_time: dto.start_time,
+      end_time: dto.end_time,
+      focus_area: dto.focus_area,
+      team,
+      coach,
+    });
+
     return this.trainingRepo.save(training);
   }
 
@@ -60,7 +68,6 @@ export class TrainingsService {
     if (!training)
       throw new NotFoundException(`Training with ID ${id} not found`);
 
-    // Agar teamId berilgan bo'lsa tekshirish
     if (dto.teamId) {
       const team = await this.teamRepo.findOne({ where: { id: dto.teamId } });
       if (!team)
@@ -70,7 +77,6 @@ export class TrainingsService {
       training.team = team;
     }
 
-    // Agar coachId berilgan bo'lsa tekshirish
     if (dto.coachId) {
       const coach = await this.coachRepo.findOne({
         where: { id: dto.coachId },

@@ -4,6 +4,7 @@ import {
   Column,
   ManyToOne,
   OneToOne,
+  JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
 } from "typeorm";
@@ -31,6 +32,7 @@ export class Payment {
   player: Player;
 
   @OneToOne(() => Enrollment, (enroll) => enroll.payment)
+  @JoinColumn() 
   enrollment: Enrollment;
 
   @Column("decimal", { precision: 10, scale: 2 })

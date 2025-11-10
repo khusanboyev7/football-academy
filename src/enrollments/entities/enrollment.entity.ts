@@ -6,6 +6,7 @@ import {
   OneToOne,
   CreateDateColumn,
   UpdateDateColumn,
+  JoinColumn,
 } from "typeorm";
 import { Player } from "../../players/entities/player.entity";
 import { Course } from "../../courses/entities/course.entity";
@@ -35,9 +36,10 @@ export class Enrollment {
   status: EnrollmentStatus;
 
   @Column("decimal", { precision: 4, scale: 2, nullable: true })
-  grade: number;
+  grade?: number;
 
-  @OneToOne(() => Payment, (payment) => payment.enrollment)
+  @OneToOne(() => Payment, (payment) => payment.enrollment, { cascade: true })
+  @JoinColumn()
   payment: Payment;
 
   @CreateDateColumn()

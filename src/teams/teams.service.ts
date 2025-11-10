@@ -61,7 +61,6 @@ export class TeamsService {
     const team = await this.teamRepo.preload({ id, ...dto });
     if (!team) throw new NotFoundException(`Team with ID ${id} not found`);
 
-    // Agar coachId berilgan bo'lsa tekshirish
     if (dto.coachId) {
       const coach = await this.coachRepo.findOne({
         where: { id: dto.coachId },

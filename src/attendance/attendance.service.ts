@@ -25,33 +25,25 @@ export class AttendanceService {
     private trainingRepo: Repository<Training>
   ) {}
 
-  async create(createAttendanceDto: CreateAttendanceDto) {
-    try {
-      const player = await this.playerRepo.findOne({
-        where: { id: createAttendanceDto.playerId },
-      });
-      const training = await this.trainingRepo.findOne({
-        where: { id: createAttendanceDto.trainingId },
-      });
+  async create(dto: CreateAttendanceDto) {
+    const player = await this.playerRepo.findOne({
+      where: { id: dto.playerId },
+    });
+    const training = await this.trainingRepo.findOne({
+      where: { id: dto.trainingId },
+    });
 
-      if (!player)
-        throw new NotFoundException("Player with given ID not found");
-      if (!training)
-        throw new NotFoundException("Training with given ID not found");
+    if (!player) throw new NotFoundException("Player not found");
+    if (!training) throw new NotFoundException("Training not found");
 
-      const attendance = this.attendanceRepo.create({
-        player,
-        training,
-        attended: createAttendanceDto.attended,
-        reason: createAttendanceDto.reason,
-      });
+    const attendance = this.attendanceRepo.create({
+      player,
+      training,
+      attended: dto.attended,
+      reason: dto.reason,
+    });
 
-      return await this.attendanceRepo.save(attendance);
-    } catch (error) {
-      throw new BadRequestException(
-        error.message || "Failed to create attendance"
-      );
-    }
+    return this.attendanceRepo.save(attendance);
   }
 
   async findAll() {
@@ -78,17 +70,28 @@ export class AttendanceService {
     }
   }
 
-  async update(id: number, updateAttendanceDto: UpdateAttendanceDto) {
-    try {
-      const attendance = await this.attendanceRepo.findOne({ where: { id } });
-      if (!attendance)
-        throw new NotFoundException(`Attendance #${id} not found`);
+  async update(id: number, dto: UpdateAttendanceDto) {
+    const attendance = await this.attendanceRepo.findOne({ where: { id } });
+    if (!attendance) throw new NotFoundException(`Attendance #${id} not found`);
 
-      Object.assign(attendance, updateAttendanceDto);
-      return await this.attendanceRepo.save(attendance);
-    } catch (error) {
-      throw new BadRequestException(error.message);
+    if (dto.playerId) {
+      const player = await this.playerRepo.findOne({
+        where: { id: dto.playerId },
+      });
+      if (!player) throw new NotFoundException("Player not found");
+      attendance.player = player;
     }
+
+    if (dto.trainingId) {
+      const training = await this.trainingRepo.findOne({
+        where: { id: dto.trainingId },
+      });
+      if (!training) throw new NotFoundException("Training not found");
+      attendance.training = training;
+    }
+
+    Object.assign(attendance, dto);
+    return this.attendanceRepo.save(attendance);
   }
 
   async remove(id: number) {

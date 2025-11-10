@@ -16,7 +16,7 @@ export class MedicalRecordsService {
     try {
       const record = this.medicalRecordRepo.create({
         ...dto,
-        player: { id: dto.playerId },
+        player: { id: dto.player },
       });
       await this.medicalRecordRepo.save(record);
       return {
@@ -74,7 +74,7 @@ export class MedicalRecordsService {
       const record = await this.medicalRecordRepo.preload({
         id,
         ...dto,
-        player: dto.playerId ? { id: dto.playerId } : undefined,
+        player: dto.player ? { id: dto.player } : undefined,
       });
       if (!record)
         return {

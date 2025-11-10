@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
   ParseIntPipe,
+  Query,
 } from "@nestjs/common";
 import { PlayerStatisticsService } from "./player_statistics.service";
 import { CreatePlayerStatisticDto } from "./dto/create-player_statistic.dto";
@@ -21,6 +22,7 @@ import {
   ApiResponse,
   ApiNotFoundResponse,
   ApiBadRequestResponse,
+  ApiQuery,
 } from "@nestjs/swagger";
 import { PlayerStatistic } from "./entities/player_statistic.entity";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
@@ -37,6 +39,8 @@ export class PlayerStatisticsController {
     private readonly playerStatisticsService: PlayerStatisticsService
   ) {}
 
+  // === CRUD ===
+
   @Post()
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @HttpCode(HttpStatus.CREATED)
@@ -46,7 +50,6 @@ export class PlayerStatisticsController {
     description: "Player statistic muvaffaqiyatli yaratildi",
     type: PlayerStatistic,
   })
-  @ApiBadRequestResponse({ description: "Noto‘g‘ri ma’lumot kiritildi" })
   create(@Body() dto: CreatePlayerStatisticDto) {
     return this.playerStatisticsService.create(dto);
   }
@@ -68,14 +71,6 @@ export class PlayerStatisticsController {
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "ID bo‘yicha player statisticni olish" })
-  @ApiResponse({
-    status: 200,
-    description: "Player statistic topildi",
-    type: PlayerStatistic,
-  })
-  @ApiNotFoundResponse({
-    description: "Berilgan ID bo‘yicha player statistic topilmadi",
-  })
   findOne(@Param("id", ParseIntPipe) id: number) {
     return this.playerStatisticsService.findOne(id);
   }
@@ -84,12 +79,6 @@ export class PlayerStatisticsController {
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Player statistic ma’lumotlarini yangilash" })
-  @ApiResponse({
-    status: 200,
-    description: "Player statistic muvaffaqiyatli yangilandi",
-    type: PlayerStatistic,
-  })
-  @ApiNotFoundResponse({ description: "Player statistic topilmadi" })
   update(
     @Param("id", ParseIntPipe) id: number,
     @Body() dto: UpdatePlayerStatisticDto
@@ -101,13 +90,35 @@ export class PlayerStatisticsController {
   @Roles(Role.SUPER_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Player statisticni o‘chirish" })
-  @ApiResponse({
-    status: 200,
-    description: "Player statistic muvaffaqiyatli o‘chirildi",
-    type: PlayerStatistic,
-  })
-  @ApiNotFoundResponse({ description: "Player statistic topilmadi" })
   remove(@Param("id", ParseIntPipe) id: number) {
     return this.playerStatisticsService.remove(id);
+  }
+
+  // === 📊 SMART ENDPOINTLAR ===
+
+  // 1️⃣ Eng yaxshi o‘yinchilar
+  @Get("analytics/top-players")
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: "Eng yaxshi o‘yinchilarni olish (rating bo‘yicha)" })
+  @ApiQuery({ name: "limit", required: false, example: 5 })
+  getTopPlayers(@Query("limit") limit?: number) {
+    return this.playerStatisticsService.getTopPlayers(limit || 5);
+  }
+
+  // 2️⃣ Match bo‘yicha gol va reyting
+  @Get("analytics/match/:matchId")
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: "Match bo‘yicha umumiy gol va o‘rtacha reyting" })
+  getMatchGoals(@Param("matchId", ParseIntPipe) matchId: number) {
+    return this.playerStatisticsService.getMatchGoals(matchId);
+  }
+
+  // 3️⃣ Eng ko‘p kartochka olgan o‘yinchilar
+  @Get("analytics/most-carded")
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: "Eng ko‘p kartochka olgan o‘yinchilar" })
+  @ApiQuery({ name: "limit", required: false, example: 5 })
+  getMostCardedPlayers(@Query("limit") limit?: number) {
+    return this.playerStatisticsService.getMostCardedPlayers(limit || 5);
   }
 }

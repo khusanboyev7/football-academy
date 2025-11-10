@@ -8,9 +8,9 @@ import {
 } from "@nestjs/swagger";
 import { User } from "./entities/user.entity";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
-import { RolesGuard } from "../common/guards/roles.guard";
-import { Roles } from "../common/decorators/roles.decorator";
+import { Roles } from "../common/decorators";
 import { Role } from "../common/enum/role.enum";
+import { RolesGuard } from "../common/guards";
 
 @ApiTags("Users")
 @ApiBearerAuth()
@@ -37,7 +37,7 @@ export class UsersController {
   }
 
   @Delete(":id")
-  @Roles(Role.SUPER_ADMIN) 
+  @Roles(Role.SUPER_ADMIN)
   @ApiOperation({ summary: "Delete a user" })
   @ApiResponse({ status: 200, description: "User deleted", type: User })
   @ApiResponse({ status: 404, description: "User not found" })

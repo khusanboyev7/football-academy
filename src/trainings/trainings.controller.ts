@@ -24,8 +24,8 @@ import {
 } from "@nestjs/swagger";
 import { Training } from "./entities/training.entity";
 import { JwtAuthGuard } from "../common/guards/jwt-auth.guard";
-import { RolesGuard } from "../common/guards/roles.guard";
-import { Roles } from "../common/decorators/roles.decorator";
+import { RolesGuard } from "../common/guards/";
+import { Roles } from "../common/decorators";
 import { Role } from "../common/enum/role.enum";
 
 @ApiTags("Trainings")

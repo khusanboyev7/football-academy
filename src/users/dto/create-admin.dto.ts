@@ -18,7 +18,7 @@ export class CreateAdminDto {
 
   @ApiProperty({
     enum: Role,
-    example: Role.SUPER_ADMIN,
+    example: Role.ADMIN,
     description: "Role of admin",
   })
   @IsEnum(Role)

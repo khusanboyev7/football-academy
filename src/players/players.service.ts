@@ -23,18 +23,13 @@ export class PlayersService {
   ) {}
 
   async create(dto: CreatePlayerDto) {
-    // Team va User mavjudligini tekshirish
-    const team = await this.teamRepo.findOne({ where: { id: dto.teamId } });
+    const team = await this.teamRepo.findOne({ where: { id: dto.team } });
     if (!team)
-      throw new BadRequestException(
-        `Team with ID ${dto.teamId} does not exist`
-      );
+      throw new BadRequestException(`Team with ID ${dto.team} does not exist`);
 
-    const user = await this.userRepo.findOne({ where: { id: dto.userId } });
+    const user = await this.userRepo.findOne({ where: { id: dto.user } });
     if (!user)
-      throw new BadRequestException(
-        `User with ID ${dto.userId} does not exist`
-      );
+      throw new BadRequestException(`User with ID ${dto.user} does not exist`);
 
     const player = this.playerRepo.create({ ...dto, team, user });
     return this.playerRepo.save(player);
@@ -74,8 +69,43 @@ export class PlayersService {
   }
 
   async update(id: number, dto: UpdatePlayerDto) {
-    const player = await this.playerRepo.preload({ id, ...dto });
+    const player = await this.playerRepo.findOne({
+      where: { id },
+      relations: ["team", "user"],
+    });
     if (!player) throw new NotFoundException(`Player with ID ${id} not found`);
+
+    if (dto.team) {
+      const team = await this.teamRepo.findOne({ where: { id: dto.team } });
+      if (!team)
+        throw new BadRequestException(
+          `Team with ID ${dto.team} does not exist`
+        );
+      player.team = team;
+    }
+
+    if (dto.user) {
+      const user = await this.userRepo.findOne({ where: { id: dto.user } });
+      if (!user)
+        throw new BadRequestException(
+          `User with ID ${dto.user} does not exist`
+        );
+      player.user = user;
+    }
+
+    if (dto.first_name !== undefined) player.first_name = dto.first_name;
+    if (dto.last_name !== undefined) player.last_name = dto.last_name;
+    if (dto.birth_date !== undefined)
+      player.birth_date = new Date(dto.birth_date);
+    if (dto.nationality !== undefined) player.nationality = dto.nationality;
+    if (dto.gender !== undefined) player.gender = dto.gender;
+    if (dto.position !== undefined) player.position = dto.position;
+    if (dto.height_cm !== undefined) player.height_cm = dto.height_cm;
+    if (dto.weight_kg !== undefined) player.weight_kg = dto.weight_kg;
+    if (dto.joined_date !== undefined)
+      player.joined_date = new Date(dto.joined_date);
+    if (dto.address !== undefined) player.address = dto.address;
+
     return this.playerRepo.save(player);
   }
 

@@ -9,15 +9,7 @@ import {
 import { Coach } from "../../coaches/entities/coach.entity";
 import { Player } from "../../players/entities/player.entity";
 import { MediaGallery } from "../../media_gallery/entities/media_gallery.entity";
-import { Role } from "../../common";
-
-export enum UserRole {
-  SUPER_ADMIN = "super_admin",
-  ADMIN = "admin",
-  COACH = "coach",
-  STAFF = "staff",
-  PLAYER = "players",
-}
+import { Role } from "../../common/enum/role.enum";
 
 @Entity("users")
 export class User {
@@ -32,6 +24,12 @@ export class User {
 
   @Column({ type: "enum", enum: Role, default: Role.PLAYER })
   role: Role;
+
+  @Column({ name: "hashed_refresh_token", type: "text", nullable: true })
+  hashedRefreshToken: string | null; 
+
+  @Column({ default: true })
+  is_active: boolean;
 
   @CreateDateColumn({ name: "created_at" })
   created_at: Date;

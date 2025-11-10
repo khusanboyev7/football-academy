@@ -45,7 +45,7 @@ export class AttendanceController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.COACH)
   @ApiOperation({ summary: "Get all attendance records" })
   @ApiResponse({
     status: 200,

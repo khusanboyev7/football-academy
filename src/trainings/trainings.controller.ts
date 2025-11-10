@@ -36,7 +36,7 @@ export class TrainingsController {
   constructor(private readonly trainingsService: TrainingsService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.COACH)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: "Yangi trening sessiyasi yaratish" })
   @ApiResponse({

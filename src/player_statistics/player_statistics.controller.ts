@@ -39,10 +39,9 @@ export class PlayerStatisticsController {
     private readonly playerStatisticsService: PlayerStatisticsService
   ) {}
 
-  // === CRUD ===
 
   @Post()
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.COACH)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: "Yangi player statistic yaratish" })
   @ApiResponse({
@@ -55,7 +54,7 @@ export class PlayerStatisticsController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.COACH)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Barcha player statisticlarni olish" })
   @ApiResponse({
@@ -68,7 +67,7 @@ export class PlayerStatisticsController {
   }
 
   @Get(":id")
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.COACH)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "ID bo‘yicha player statisticni olish" })
   findOne(@Param("id", ParseIntPipe) id: number) {
@@ -94,28 +93,23 @@ export class PlayerStatisticsController {
     return this.playerStatisticsService.remove(id);
   }
 
-  // === 📊 SMART ENDPOINTLAR ===
-
-  // 1️⃣ Eng yaxshi o‘yinchilar
   @Get("analytics/top-players")
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.COACH)
   @ApiOperation({ summary: "Eng yaxshi o‘yinchilarni olish (rating bo‘yicha)" })
   @ApiQuery({ name: "limit", required: false, example: 5 })
   getTopPlayers(@Query("limit") limit?: number) {
     return this.playerStatisticsService.getTopPlayers(limit || 5);
   }
 
-  // 2️⃣ Match bo‘yicha gol va reyting
   @Get("analytics/match/:matchId")
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.COACH)
   @ApiOperation({ summary: "Match bo‘yicha umumiy gol va o‘rtacha reyting" })
   getMatchGoals(@Param("matchId", ParseIntPipe) matchId: number) {
     return this.playerStatisticsService.getMatchGoals(matchId);
   }
 
-  // 3️⃣ Eng ko‘p kartochka olgan o‘yinchilar
   @Get("analytics/most-carded")
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.COACH)
   @ApiOperation({ summary: "Eng ko‘p kartochka olgan o‘yinchilar" })
   @ApiQuery({ name: "limit", required: false, example: 5 })
   getMostCardedPlayers(@Query("limit") limit?: number) {

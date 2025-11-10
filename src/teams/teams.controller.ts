@@ -52,7 +52,7 @@ export class TeamsController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.COACH)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Barcha teamlarni olish" })
   @ApiResponse({
@@ -65,7 +65,7 @@ export class TeamsController {
   }
 
   @Get(":id")
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.STAFF)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "ID bo‘yicha teamni olish" })
   @ApiResponse({ status: 200, description: "Team topildi", type: Team })

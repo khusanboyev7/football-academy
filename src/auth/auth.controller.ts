@@ -60,7 +60,6 @@ export class AuthController {
     return this.authService.getMe(user.id);
   }
 
-  // 🧱 SuperAdmin yoki Admin yangi foydalanuvchi yaratadi
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiBearerAuth()

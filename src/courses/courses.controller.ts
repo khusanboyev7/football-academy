@@ -57,7 +57,7 @@ export class CoursesController {
   }
 
   @Get(":id")
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.COACH)
   @ApiOperation({ summary: "Get course by ID" })
   @ApiResponse({ status: 200, description: "Course found", type: Course })
   @ApiResponse({ status: 404, description: "Course not found" })

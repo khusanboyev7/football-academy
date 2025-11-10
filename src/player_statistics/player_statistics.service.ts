@@ -24,7 +24,6 @@ export class PlayerStatisticsService {
     private readonly palyerRepo: Repository<Player>
   ) {}
 
-  // === CRUD ===
 
   async create(dto: CreatePlayerStatisticDto) {
     const player = await this.palyerRepo.findOne({
@@ -102,9 +101,6 @@ export class PlayerStatisticsService {
     return await this.playerStatisticRepo.remove(statistic);
   }
 
-  // === 📊 SMART QUERIES ===
-
-  // 1️⃣ Eng yaxshi o‘yinchilar (o‘rtacha reyting bo‘yicha)
   async getTopPlayers(limit = 5) {
     return await this.playerStatisticRepo
       .createQueryBuilder("stat")
@@ -123,7 +119,6 @@ export class PlayerStatisticsService {
       .getRawMany();
   }
 
-  // 2️⃣ Match bo‘yicha umumiy gol va o‘rtacha reyting
   async getMatchGoals(matchId: number) {
     return await this.playerStatisticRepo
       .createQueryBuilder("stat")
@@ -134,7 +129,6 @@ export class PlayerStatisticsService {
       .getRawOne();
   }
 
-  // 3️⃣ Eng ko‘p kartochka olgan o‘yinchilar
   async getMostCardedPlayers(limit = 5) {
     return await this.playerStatisticRepo
       .createQueryBuilder("stat")

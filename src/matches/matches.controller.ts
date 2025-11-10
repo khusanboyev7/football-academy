@@ -51,7 +51,7 @@ export class MatchesController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.COACH, Role.STAFF)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Barcha matchlarni olish" })
   @ApiResponse({
@@ -64,7 +64,7 @@ export class MatchesController {
   }
 
   @Get(":id")
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.COACH, Role.STAFF)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "ID bo‘yicha bitta matchni olish" })
   @ApiResponse({ status: 200, description: "Match topildi", type: Match })

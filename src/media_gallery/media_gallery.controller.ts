@@ -50,7 +50,7 @@ export class MediaGalleryController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.STAFF)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Barcha media fayllarni olish" })
   @ApiResponse({
@@ -63,7 +63,7 @@ export class MediaGalleryController {
   }
 
   @Get(":id")
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.STAFF)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "ID bo‘yicha bitta media faylni olish" })
   @ApiResponse({

@@ -36,7 +36,7 @@ export class MatchesController {
   constructor(private readonly matchesService: MatchesService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.COACH)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: "Yangi match yaratish" })
   @ApiResponse({

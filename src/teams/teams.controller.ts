@@ -36,7 +36,7 @@ export class TeamsController {
   constructor(private readonly teamsService: TeamsService) {}
 
   @Post()
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.COACH)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: "Yangi team yaratish" })
   @ApiResponse({
@@ -52,7 +52,7 @@ export class TeamsController {
   }
 
   @Get()
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.COACH)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.COACH, Role.STAFF)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "Barcha teamlarni olish" })
   @ApiResponse({
@@ -65,7 +65,7 @@ export class TeamsController {
   }
 
   @Get(":id")
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.STAFF)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.STAFF, Role.COACH)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "ID bo‘yicha teamni olish" })
   @ApiResponse({ status: 200, description: "Team topildi", type: Team })

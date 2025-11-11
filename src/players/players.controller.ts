@@ -63,7 +63,7 @@ export class PlayersController {
   }
 
   @Get(":id")
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN, Role.PLAYER)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: "ID bo‘yicha playerni olish" })
   @ApiResponse({ status: 200, description: "Player topildi", type: Player })
